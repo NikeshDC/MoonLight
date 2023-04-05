@@ -40,6 +40,9 @@ public class ObjectPooler : MonoBehaviour
             }
         }
 
+        public int getPoolItemsCount() { return pooledObjects.Count;  }
+        public int getSceneItemsCount() { return spawnedObjects.Count;  }
+
         public GameObject spawn(Vector3 position, Quaternion rotation)
         {
             if(pooledObjects.Count == 0)
@@ -59,6 +62,7 @@ public class ObjectPooler : MonoBehaviour
             }
 
             GameObject spawnObject = pooledObjects.Dequeue();
+            spawnObject.SetActive(true);
             spawnObject.transform.position = position;
             spawnObject.transform.rotation = rotation;
 
@@ -81,6 +85,20 @@ public class ObjectPooler : MonoBehaviour
     public List<PoolType> pools;  //the definitions of pools to create
     private Dictionary<string, Pool> objectPools;  //pools of instantiated gameobjects from where we can get new instances based on string tag
 
+    public void Awake()
+    {
+        Initialize();
+    }
+
+    public void Initialize()
+    {
+        objectPools = new Dictionary<string, Pool>();
+        foreach(PoolType poolType in pools)
+        {
+            InitializePool(poolType);
+        }
+    }
+
     public void InitializePool(PoolType poolType)
     {
         if (objectPools.ContainsKey(poolType.tag))
@@ -91,6 +109,16 @@ public class ObjectPooler : MonoBehaviour
 
         Pool poolTypePool = new Pool(poolType);
         objectPools.Add(poolType.tag, poolTypePool);  //add the pool to dictionary of pools
+    }
+
+    public Pool getPool(string poolTag)
+    {
+        if (!objectPools.ContainsKey(poolTag))
+        {//pool has already been created for given tag
+            Debug.LogWarning("Pool for " + poolTag + " not created");
+            return null;
+        }
+        return objectPools[poolTag];
     }
 
     public GameObject spawn(string poolTag, Vector3 position, Quaternion rotation)
